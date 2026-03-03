@@ -156,6 +156,12 @@ variable "postgres_deletion_protection" {
   default     = false
 }
 
+variable "postgres_port" {
+  description = "PostgreSQL port"
+  type        = number
+  default     = 5432
+}
+
 variable "cache_node_type" {
   description = "ElastiCache node type"
   type        = string
