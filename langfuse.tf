@@ -1,6 +1,18 @@
 locals {
   inbound_cidrs_csv = join(",", var.ingress_inbound_cidrs)
 
+  # ClickHouse Cloud's HTTP interface is TLS-only, and the Langfuse Helm chart
+  # derives the CLICKHOUSE_URL scheme *solely* from an https:// prefix on the host
+  # (it does NOT consult clickhouse.migration.ssl). So when SSL is requested we
+  # must ensure the host carries the scheme, otherwise web/worker build
+  # http://<host>:8443 and every query fails against the TLS port. The migration
+  # URL (clickhouse://) strips the prefix again, so prefixing here is safe for both.
+  clickhouse_host_effective = (
+    var.clickhouse_ssl && length(regexall("^https?://", var.clickhouse_host)) == 0
+    ? "https://${var.clickhouse_host}"
+    : var.clickhouse_host
+  )
+
   # Only set EFS as default storage class when deploying bundled ClickHouse
   clickhouse_storage_values = !var.clickhouse_deploy ? "" : <<EOT
 global:
@@ -9,6 +21,8 @@ EOT
 
   langfuse_values = <<EOT
 langfuse:
+  features:
+    signUpDisabled: ${var.langfuse_signup_disabled}
   salt:
     secretKeyRef:
       name: langfuse
@@ -100,7 +114,7 @@ EOT
   clickhouse_external_values = <<EOT
 clickhouse:
   deploy: false
-  host: ${var.clickhouse_host}
+  host: ${local.clickhouse_host_effective}
   httpPort: ${var.clickhouse_http_port}
   nativePort: ${var.clickhouse_native_port}
   auth:

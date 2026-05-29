@@ -175,6 +175,12 @@ variable "langfuse_worker_replicas" {
   }
 }
 
+variable "langfuse_signup_disabled" {
+  description = "Disable new-user sign-up via the chart's native langfuse.features.signUpDisabled (renders AUTH_DISABLE_SIGNUP). When true, do NOT also set AUTH_DISABLE_SIGNUP in additional_env — the chart rejects configuring both, and a duplicate env var breaks in-place Helm patches."
+  type        = bool
+  default     = false
+}
+
 variable "clickhouse_replicas" {
   description = "Number of replicas of ClickHouse containers"
   type        = number
@@ -269,7 +275,7 @@ variable "clickhouse_deploy" {
 }
 
 variable "clickhouse_host" {
-  description = "Hostname of external ClickHouse instance (required when clickhouse_deploy = false)"
+  description = "Hostname of external ClickHouse instance (required when clickhouse_deploy = false). May be a bare hostname; when clickhouse_ssl = true an https:// scheme is added automatically so the HTTP query URL uses TLS (e.g. ClickHouse Cloud)."
   type        = string
   default     = ""
 }
@@ -313,6 +319,12 @@ variable "clickhouse_ssl" {
 
 variable "clickhouse_cluster_enabled" {
   description = "Enable ON CLUSTER DDL commands. Set to false for ClickHouse Cloud."
+  type        = bool
+  default     = false
+}
+
+variable "retain_clickhouse_efs" {
+  description = "Keep the bundled-ClickHouse EFS filesystem (and its data) even when clickhouse_deploy = false. Lets you cut over to an external ClickHouse while retaining the old data for rollback; set back to false in a later apply to decommission it. Has no effect while clickhouse_deploy = true."
   type        = bool
   default     = false
 }

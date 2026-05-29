@@ -1,6 +1,11 @@
 # EFS File System
 resource "aws_efs_file_system" "langfuse" {
-  count           = var.clickhouse_deploy ? 1 : 0
+  # Retain the filesystem (and its ClickHouse data) when migrating off bundled
+  # ClickHouse, so it stays available for rollback. Decoupled from the other EFS
+  # resources (mount targets, SG, access points) which are only needed while
+  # bundled ClickHouse is actually running. Set retain_clickhouse_efs = false in a
+  # later apply to decommission once external ClickHouse is proven.
+  count           = (var.clickhouse_deploy || var.retain_clickhouse_efs) ? 1 : 0
   creation_token  = "${var.name}-efs"
   encrypted       = true
   throughput_mode = "elastic"

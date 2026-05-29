@@ -25,6 +25,11 @@ output "route53_nameservers" {
   value       = aws_route53_zone.zone.name_servers
 }
 
+output "vpc_id" {
+  description = "VPC ID (created or reused) — useful for attaching VPC endpoints (e.g. ClickHouse Cloud PrivateLink)"
+  value       = local.vpc_id
+}
+
 output "private_subnet_ids" {
   description = "Private subnet IDs from the VPC module"
   value       = local.private_subnets
