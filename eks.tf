@@ -120,6 +120,20 @@ resource "aws_security_group_rule" "eks_vpc" {
   security_group_id = aws_security_group.eks.id
 }
 
+# Reach the private API server (443) from outside the VPC — e.g. Client VPN
+# admins running kubectl or the Terraform kubernetes/helm providers over a VPN
+# + VPC peering. No-op when eks_api_inbound_cidrs is empty (the default).
+resource "aws_security_group_rule" "eks_api_inbound" {
+  count             = length(var.eks_api_inbound_cidrs) > 0 ? 1 : 0
+  type              = "ingress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  cidr_blocks       = var.eks_api_inbound_cidrs
+  security_group_id = aws_security_group.eks.id
+  description       = "API server access for external (VPN) operators"
+}
+
 resource "aws_iam_role" "eks" {
   name = "${var.name}-eks"
 

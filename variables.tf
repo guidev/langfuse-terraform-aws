@@ -227,6 +227,17 @@ variable "ingress_inbound_cidrs" {
   default     = ["0.0.0.0/0"]
 }
 
+variable "eks_api_inbound_cidrs" {
+  description = <<-EOT
+    CIDR blocks allowed to reach the EKS API server (443) on top of the VPC's
+    own CIDR. With a private-only endpoint this is how operators (e.g. Client
+    VPN admins) reach the control plane to run kubectl / the Terraform
+    kubernetes & helm providers. Empty by default = VPC-internal access only.
+  EOT
+  type        = list(string)
+  default     = []
+}
+
 variable "redis_at_rest_encryption" {
   description = "Whether at-rest encryption is enabled for the Redis cluster"
   type        = bool
