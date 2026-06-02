@@ -8,9 +8,13 @@ resource "aws_eks_cluster" "langfuse" {
   version  = var.kubernetes_version
 
   vpc_config {
-    subnet_ids              = local.private_subnets
+    subnet_ids = local.private_subnets
+    # Private-only API endpoint: reached over the VPN + VPC peering, never the
+    # public internet (satisfies CIS "EKS public access limited" / "private
+    # endpoint enabled"). Terraform's kubernetes/helm providers and kubectl must
+    # run over the VPN.
     endpoint_private_access = true
-    endpoint_public_access  = true
+    endpoint_public_access  = false
     security_group_ids      = [aws_security_group.eks.id]
   }
 
