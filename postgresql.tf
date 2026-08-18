@@ -59,6 +59,10 @@ resource "aws_rds_cluster" "postgres" {
   preferred_maintenance_window = "mon:04:00-mon:05:00"
   port                         = var.postgres_port
 
+  copy_tags_to_snapshot               = true
+  iam_database_authentication_enabled = true
+  enabled_cloudwatch_logs_exports     = ["postgresql"]
+
   serverlessv2_scaling_configuration {
     min_capacity = var.postgres_min_capacity
     max_capacity = var.postgres_max_capacity
@@ -67,6 +71,41 @@ resource "aws_rds_cluster" "postgres" {
   tags = {
     Name = local.tag_name
   }
+
+  depends_on = [aws_cloudwatch_log_group.postgres]
+}
+
+# RDS creates this log group itself on first export; declaring it here is the only
+# way to pin retention, so the cluster must wait for it to avoid an "already exists".
+resource "aws_cloudwatch_log_group" "postgres" {
+  name              = "/aws/rds/cluster/${var.name}-postgres/postgresql"
+  retention_in_days = 90
+}
+
+resource "aws_iam_role" "rds_monitoring" {
+  name = "${var.name}-rds-monitoring"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "monitoring.rds.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${local.tag_name} RDS Monitoring"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "rds_monitoring" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
+  role       = aws_iam_role.rds_monitoring.name
 }
 
 resource "aws_rds_cluster_parameter_group" "postgres" {
@@ -76,13 +115,19 @@ resource "aws_rds_cluster_parameter_group" "postgres" {
 }
 
 resource "aws_rds_cluster_instance" "postgres" {
-  count              = var.postgres_instance_count
-  identifier         = "${var.name}-postgres-${count.index + 1}"
-  cluster_identifier = aws_rds_cluster.postgres.id
-  instance_class     = "db.serverless"
+  count               = var.postgres_instance_count
+  identifier          = "${var.name}-postgres-${count.index + 1}"
+  cluster_identifier  = aws_rds_cluster.postgres.id
+  instance_class      = "db.serverless"
   engine              = aws_rds_cluster.postgres.engine
   engine_version      = aws_rds_cluster.postgres.engine_version
   publicly_accessible = false
+
+  copy_tags_to_snapshot = true
+
+  # Enhanced Monitoring
+  monitoring_interval = 60
+  monitoring_role_arn = aws_iam_role.rds_monitoring.arn
 
   # Enable Performance Insights
   performance_insights_enabled          = true

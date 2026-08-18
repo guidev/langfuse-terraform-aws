@@ -94,6 +94,9 @@ fabric.properties
 **/.terraform/*
 
 examples/**/.terraform.lock.hcl
+# This repo is consumed as a MODULE, so a root lock file is only ever the
+# artefact of running terraform inside the module directory. Not committed.
+.terraform.lock.hcl
 
 # .tfstate files
 *.tfstate
