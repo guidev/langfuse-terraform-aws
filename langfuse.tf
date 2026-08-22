@@ -124,7 +124,12 @@ clickhouse:
     existingSecretKey: clickhouse-password
   migration:
     ssl: ${var.clickhouse_ssl}
-  clusterEnabled: ${var.clickhouse_cluster_enabled}
+  # Chart v2.0.0 moved the flat clusterEnabled key under cluster.enabled, and it
+  # DEFAULTS TO TRUE. Helm ignores the old key silently, so leaving it here would
+  # flip CLICKHOUSE_CLUSTER_ENABLED to true and send ON CLUSTER DDL at a
+  # single-node / Cloud ClickHouse.
+  cluster:
+    enabled: ${var.clickhouse_cluster_enabled}
 EOT
 
   clickhouse_values = var.clickhouse_deploy ? local.clickhouse_bundled_values : local.clickhouse_external_values
