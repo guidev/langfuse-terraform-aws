@@ -592,3 +592,9 @@ variable "postgres_deletion_protection" {
   type        = bool
   default     = true
 }
+
+variable "langfuse_signup_disabled" {
+  description = "Disable new-user sign-up via the chart's native langfuse.features.signUpDisabled (renders AUTH_DISABLE_SIGNUP). When true, do NOT also set AUTH_DISABLE_SIGNUP in additional_env: the chart rejects configuring both, and a duplicate env var breaks in-place Helm patches."
+  type        = bool
+  default     = false
+}

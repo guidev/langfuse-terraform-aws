@@ -4,6 +4,8 @@ locals {
 langfuse:
   image:
     tag: ${jsonencode(var.app_version)}
+  features:
+    signUpDisabled: ${var.langfuse_signup_disabled}
   salt:
     secretKeyRef:
       name: langfuse
