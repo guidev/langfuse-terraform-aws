@@ -212,7 +212,7 @@ resource "aws_iam_role_policy_attachment" "eks_service_policy" {
 resource "aws_cloudwatch_log_group" "eks" {
   name              = "/aws/eks/${var.name}/cluster"
   retention_in_days = 30
-} 
+}
 
 resource "aws_kms_key" "eks" {
   description             = "${local.tag_name} EKS secrets envelope encryption"

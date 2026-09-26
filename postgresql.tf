@@ -43,25 +43,25 @@ resource "aws_db_subnet_group" "postgres" {
 }
 
 resource "aws_rds_cluster" "postgres" {
-  cluster_identifier           = "${var.name}-postgres"
-  engine                       = "aurora-postgresql"
-  engine_mode                  = "provisioned"
-  engine_version               = var.postgres_version
-  database_name                = "langfuse"
-  master_username              = "langfuse"
-  master_password              = random_password.postgres_password.result
-  db_subnet_group_name         = aws_db_subnet_group.postgres.name
-  vpc_security_group_ids       = [aws_security_group.postgres.id]
-  skip_final_snapshot          = true
-  deletion_protection          = var.postgres_deletion_protection
-  copy_tags_to_snapshot        = true
+  cluster_identifier                  = "${var.name}-postgres"
+  engine                              = "aurora-postgresql"
+  engine_mode                         = "provisioned"
+  engine_version                      = var.postgres_version
+  database_name                       = "langfuse"
+  master_username                     = "langfuse"
+  master_password                     = random_password.postgres_password.result
+  db_subnet_group_name                = aws_db_subnet_group.postgres.name
+  vpc_security_group_ids              = [aws_security_group.postgres.id]
+  skip_final_snapshot                 = true
+  deletion_protection                 = var.postgres_deletion_protection
+  copy_tags_to_snapshot               = true
   iam_database_authentication_enabled = true
   enabled_cloudwatch_logs_exports     = ["postgresql"]
-  storage_encrypted            = true
-  backup_retention_period      = 7
-  preferred_backup_window      = "03:00-04:00"
-  preferred_maintenance_window = "mon:04:00-mon:05:00"
-  port                         = var.postgres_port
+  storage_encrypted                   = true
+  backup_retention_period             = 7
+  preferred_backup_window             = "03:00-04:00"
+  preferred_maintenance_window        = "mon:04:00-mon:05:00"
+  port                                = var.postgres_port
 
   serverlessv2_scaling_configuration {
     min_capacity = var.postgres_min_capacity
@@ -78,13 +78,13 @@ resource "aws_rds_cluster" "postgres" {
 }
 
 resource "aws_rds_cluster_instance" "postgres" {
-  count               = var.postgres_instance_count
-  identifier          = "${var.name}-postgres-${count.index + 1}"
-  cluster_identifier  = aws_rds_cluster.postgres.id
-  instance_class      = "db.serverless"
-  engine              = aws_rds_cluster.postgres.engine
-  engine_version      = aws_rds_cluster.postgres.engine_version
-  publicly_accessible = false
+  count                 = var.postgres_instance_count
+  identifier            = "${var.name}-postgres-${count.index + 1}"
+  cluster_identifier    = aws_rds_cluster.postgres.id
+  instance_class        = "db.serverless"
+  engine                = aws_rds_cluster.postgres.engine
+  engine_version        = aws_rds_cluster.postgres.engine_version
+  publicly_accessible   = false
   copy_tags_to_snapshot = true
 
   # Enhanced Monitoring
