@@ -10,7 +10,7 @@ locals {
       "access_logs.s3.bucket=${aws_s3_bucket.alb_logs[0].id}",
     ] : [],
   ))
-  langfuse_values   = <<EOT
+  langfuse_values = <<EOT
 langfuse:
   image:
     tag: ${jsonencode(var.app_version)}
