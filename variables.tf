@@ -598,3 +598,15 @@ variable "langfuse_signup_disabled" {
   type        = bool
   default     = false
 }
+
+variable "enable_alb_access_logs" {
+  description = "Deliver ALB access logs to a dedicated S3 bucket created by this module."
+  type        = bool
+  default     = false
+}
+
+variable "alb_access_logs_retention_days" {
+  description = "Days to keep ALB access logs before they expire."
+  type        = number
+  default     = 400
+}

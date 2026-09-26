@@ -1,5 +1,15 @@
 locals {
   inbound_cidrs_csv = join(",", var.ingress_inbound_cidrs)
+  alb_attributes = join(",", concat(
+    [
+      "deletion_protection.enabled=true",
+      "routing.http.drop_invalid_header_fields.enabled=true",
+    ],
+    var.enable_alb_access_logs ? [
+      "access_logs.s3.enabled=true",
+      "access_logs.s3.bucket=${aws_s3_bucket.alb_logs[0].id}",
+    ] : [],
+  ))
   langfuse_values   = <<EOT
 langfuse:
   image:
@@ -219,6 +229,8 @@ langfuse:
       alb.ingress.kubernetes.io/scheme: ${var.alb_scheme}
       alb.ingress.kubernetes.io/target-type: 'ip'
       alb.ingress.kubernetes.io/ssl-redirect: '443'
+      alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-3-PQ-2025-09
+      alb.ingress.kubernetes.io/load-balancer-attributes: ${local.alb_attributes}
       alb.ingress.kubernetes.io/inbound-cidrs: ${local.inbound_cidrs_csv}
       alb.ingress.kubernetes.io/certificate-arn: ${local.certificate_arn}
     hosts:
