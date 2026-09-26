@@ -75,3 +75,26 @@ resource "aws_route53_record" "langfuse" {
     evaluate_target_health = true
   }
 }
+
+# 1.1.0 made these resources conditional on skip_dns_setup, which changed their
+# addresses. Without these, upgrading from 1.0.x plans to destroy and recreate
+# the hosted zone and certificate.
+moved {
+  from = aws_acm_certificate.cert
+  to   = aws_acm_certificate.cert[0]
+}
+
+moved {
+  from = aws_route53_zone.zone
+  to   = aws_route53_zone.zone[0]
+}
+
+moved {
+  from = aws_acm_certificate_validation.cert
+  to   = aws_acm_certificate_validation.cert[0]
+}
+
+moved {
+  from = aws_route53_record.langfuse
+  to   = aws_route53_record.langfuse[0]
+}
