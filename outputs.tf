@@ -105,3 +105,8 @@ output "agent_sandbox_build_env" {
     BASE_IMAGE_VERSION            = "0"
   } : null
 }
+
+output "vpc_id" {
+  description = "VPC ID (created or reused), e.g. for attaching VPC endpoints such as ClickHouse Cloud PrivateLink"
+  value       = local.vpc_id
+}
