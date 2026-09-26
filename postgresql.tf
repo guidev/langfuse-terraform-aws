@@ -53,6 +53,10 @@ resource "aws_rds_cluster" "postgres" {
   db_subnet_group_name         = aws_db_subnet_group.postgres.name
   vpc_security_group_ids       = [aws_security_group.postgres.id]
   skip_final_snapshot          = true
+  deletion_protection          = var.postgres_deletion_protection
+  copy_tags_to_snapshot        = true
+  iam_database_authentication_enabled = true
+  enabled_cloudwatch_logs_exports     = ["postgresql"]
   storage_encrypted            = true
   backup_retention_period      = 7
   preferred_backup_window      = "03:00-04:00"
@@ -67,6 +71,10 @@ resource "aws_rds_cluster" "postgres" {
   tags = {
     Name = local.tag_name
   }
+
+  # RDS creates the export log group itself on first use; declaring it here is
+  # the only way to pin its retention, so the cluster must wait for it.
+  depends_on = [aws_cloudwatch_log_group.postgres]
 }
 
 resource "aws_rds_cluster_instance" "postgres" {
@@ -77,6 +85,11 @@ resource "aws_rds_cluster_instance" "postgres" {
   engine              = aws_rds_cluster.postgres.engine
   engine_version      = aws_rds_cluster.postgres.engine_version
   publicly_accessible = false
+  copy_tags_to_snapshot = true
+
+  # Enhanced Monitoring
+  monitoring_interval = 60
+  monitoring_role_arn = aws_iam_role.rds_monitoring.arn
 
   # Enable Performance Insights
   performance_insights_enabled          = true
@@ -85,4 +98,35 @@ resource "aws_rds_cluster_instance" "postgres" {
   tags = {
     Name = "${local.tag_name} ${count.index + 1}"
   }
+}
+
+resource "aws_cloudwatch_log_group" "postgres" {
+  name              = "/aws/rds/cluster/${var.name}-postgres/postgresql"
+  retention_in_days = 90
+}
+
+resource "aws_iam_role" "rds_monitoring" {
+  name = "${var.name}-rds-monitoring"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "monitoring.rds.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${local.tag_name} RDS Monitoring"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "rds_monitoring" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
+  role       = aws_iam_role.rds_monitoring.name
 }

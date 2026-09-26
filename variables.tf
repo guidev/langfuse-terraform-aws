@@ -586,3 +586,9 @@ variable "additional_env" {
     error_message = "Each environment variable must have either 'value' or 'valueFrom' specified, but not both."
   }
 }
+
+variable "postgres_deletion_protection" {
+  description = "Enable deletion protection on the Aurora cluster. Set to false before a deliberate terraform destroy."
+  type        = bool
+  default     = true
+}
