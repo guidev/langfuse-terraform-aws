@@ -18,6 +18,15 @@ resource "aws_eks_cluster" "langfuse" {
     security_group_ids      = [aws_security_group.eks.id]
   }
 
+  # Envelope-encrypt Kubernetes Secrets with a customer-managed KMS key. Adding
+  # this to an existing cluster is an in-place update; it cannot be removed.
+  encryption_config {
+    provider {
+      key_arn = aws_kms_key.eks.arn
+    }
+    resources = ["secrets"]
+  }
+
   enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 
   tags = {
@@ -27,6 +36,7 @@ resource "aws_eks_cluster" "langfuse" {
   depends_on = [
     aws_iam_role_policy_attachment.eks_cluster_policy,
     aws_iam_role_policy_attachment.eks_service_policy,
+    aws_iam_role_policy.eks_kms,
     aws_cloudwatch_log_group.eks
   ]
 }
@@ -203,3 +213,34 @@ resource "aws_cloudwatch_log_group" "eks" {
   name              = "/aws/eks/${var.name}/cluster"
   retention_in_days = 30
 } 
+
+resource "aws_kms_key" "eks" {
+  description             = "${local.tag_name} EKS secrets envelope encryption"
+  enable_key_rotation     = true
+  deletion_window_in_days = 30
+
+  tags = {
+    Name = "${local.tag_name} EKS"
+  }
+}
+
+resource "aws_kms_alias" "eks" {
+  name          = "alias/${var.name}-eks-secrets"
+  target_key_id = aws_kms_key.eks.key_id
+}
+
+resource "aws_iam_role_policy" "eks_kms" {
+  name = "kms-secrets-encryption"
+  role = aws_iam_role.eks.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["kms:Encrypt", "kms:Decrypt", "kms:ListGrants", "kms:DescribeKey"]
+        Resource = aws_kms_key.eks.arn
+      }
+    ]
+  })
+}
