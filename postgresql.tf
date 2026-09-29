@@ -102,7 +102,7 @@ resource "aws_rds_cluster_instance" "postgres" {
 
 resource "aws_cloudwatch_log_group" "postgres" {
   name              = "/aws/rds/cluster/${var.name}-postgres/postgresql"
-  retention_in_days = 90
+  retention_in_days = 400 # database log: access & security tier
 }
 
 resource "aws_iam_role" "rds_monitoring" {
