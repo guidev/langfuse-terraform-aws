@@ -34,7 +34,7 @@ resource "aws_elasticache_parameter_group" "redis" {
 
 resource "aws_cloudwatch_log_group" "redis" {
   name              = "/redis/${var.name}"
-  retention_in_days = 7
+  retention_in_days = 365 # application tier
 }
 
 resource "aws_elasticache_subnet_group" "redis" {
