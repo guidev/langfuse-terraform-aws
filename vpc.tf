@@ -32,6 +32,10 @@ module "vpc" {
   create_flow_log_cloudwatch_log_group = true
   create_flow_log_cloudwatch_iam_role  = true
   flow_log_max_aggregation_interval    = 60
+  # Flow logs carry every connection's source IP: 90 days, same as the ALB
+  # access logs (solomei-infra docs/logging-and-retention.md). Without this the
+  # group never expires and reverts the ceiling set in the console.
+  flow_log_cloudwatch_log_group_retention_in_days = 90
 
   # Add required tags for the AWS Load Balancer Controller
   private_subnet_tags = {
