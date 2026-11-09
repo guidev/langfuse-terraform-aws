@@ -42,6 +42,36 @@ resource "aws_db_subnet_group" "postgres" {
   }
 }
 
+# TLS-only connections and pgaudit. A newly associated cluster parameter group,
+# and the static shared_preload_libraries, take effect only once the writer
+# reboots. pgaudit.log = ddl,role keeps the audit trail to schema and privilege
+# changes; read/write would log every query into the exported postgresql logs.
+resource "aws_rds_cluster_parameter_group" "postgres" {
+  name_prefix = "${var.name}-postgres-"
+  family      = "aurora-postgresql${split(".", var.postgres_version)[0]}"
+
+  parameter {
+    name  = "rds.force_ssl"
+    value = "1"
+  }
+
+  parameter {
+    name         = "shared_preload_libraries"
+    value        = "pg_stat_statements,pgaudit"
+    apply_method = "pending-reboot"
+  }
+
+  parameter {
+    name  = "pgaudit.log"
+    value = "ddl,role"
+  }
+
+  # A major version bump changes the family, which forces a new group.
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 resource "aws_rds_cluster" "postgres" {
   cluster_identifier                  = "${var.name}-postgres"
   engine                              = "aurora-postgresql"
@@ -62,6 +92,7 @@ resource "aws_rds_cluster" "postgres" {
   preferred_backup_window             = "03:00-04:00"
   preferred_maintenance_window        = "mon:04:00-mon:05:00"
   port                                = var.postgres_port
+  db_cluster_parameter_group_name     = aws_rds_cluster_parameter_group.postgres.name
 
   serverlessv2_scaling_configuration {
     min_capacity = var.postgres_min_capacity

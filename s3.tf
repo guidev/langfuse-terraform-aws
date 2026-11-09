@@ -30,6 +30,22 @@ resource "aws_s3_bucket_public_access_block" "langfuse" {
   restrict_public_buckets = true
 }
 
+resource "aws_s3_bucket_policy" "langfuse" {
+  bucket = aws_s3_bucket.langfuse.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid       = "DenyInsecureTransport"
+      Effect    = "Deny"
+      Principal = "*"
+      Action    = "s3:*"
+      Resource  = [aws_s3_bucket.langfuse.arn, "${aws_s3_bucket.langfuse.arn}/*"]
+      Condition = { Bool = { "aws:SecureTransport" = "false" } }
+    }]
+  })
+}
+
 # Add lifecycle rules for cost optimization
 resource "aws_s3_bucket_lifecycle_configuration" "langfuse" {
   bucket = aws_s3_bucket.langfuse.id
@@ -150,6 +166,14 @@ resource "aws_s3_bucket_policy" "alb_logs" {
         Principal = { AWS = data.aws_elb_service_account.current[0].arn }
         Action    = "s3:PutObject"
         Resource  = "${aws_s3_bucket.alb_logs[0].arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
+      },
+      {
+        Sid       = "DenyInsecureTransport"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource  = [aws_s3_bucket.alb_logs[0].arn, "${aws_s3_bucket.alb_logs[0].arn}/*"]
+        Condition = { Bool = { "aws:SecureTransport" = "false" } }
       }
     ]
   })
