@@ -341,7 +341,7 @@ resource "helm_release" "langfuse" {
   # pass its probes, and the web pod may crash-restart once on the way.
   timeout = var.helm_release_timeout
 
-  values = compact([
+  values = compact(concat([
     local.langfuse_values,
     local.clickhouse_values,
     local.ingress_values,
@@ -350,7 +350,7 @@ resource "helm_release" "langfuse" {
     local.code_eval_worker_values,
     local.ai_features_values,
     local.clickhouse_overwrite_values,
-  ])
+  ], var.additional_helm_values))
 
   depends_on = [
     kubernetes_namespace.langfuse,
